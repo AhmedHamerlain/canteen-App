@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # تحرير مساحة القرص (خطوة مهمة جداً)
+      # تنظيف المساحة
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: '3.9'
 
-      # تثبيت المكتبات (بدون gstreamer لتجنب المشاكل)
+      # تثبيت المكتبات (تم إضافة gettext و autopoint لحل مشكلة AM_ICONV)
       - name: Install System Dependencies
         run: |
           sudo apt-get update
@@ -42,7 +42,8 @@ jobs:
             libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev \
             libswscale-dev libavformat-dev libavcodec-dev \
             zlib1g-dev libffi-dev libssl-dev zip unzip autoconf libtool \
-            libzbar-dev libzbar0
+            libzbar-dev libzbar0 \
+            gettext autopoint pkg-config automake
 
       # تثبيت Buildozer
       - name: Install Buildozer & Dependencies
@@ -51,16 +52,14 @@ jobs:
           pip install buildozer cython==0.29.33
           pip install kivy==2.2.0 kivymd reportlab arabic-reshaper python-bidi
 
-      # الخطوة الحاسمة: إلغاء تفعيل أدوات النظام وتشغيل Buildozer
+      # البناء (مع تجاهل أدوات النظام لتجنب التضارب)
       - name: Build APK with Buildozer
         run: |
-          # نقوم بإفراغ المتغيرات لكي لا يرى Buildozer أدوات النظام المثبتة مسبقاً
           export ANDROID_HOME=""
           export ANDROID_SDK_ROOT=""
           export ANDROID_NDK_HOME=""
           export ANDROID_NDK_ROOT=""
           
-          # الآن سيبدأ Buildozer بتحميل NDK 25b الخاص به
           yes | buildozer android debug
 
       - name: Upload APK Artifact
