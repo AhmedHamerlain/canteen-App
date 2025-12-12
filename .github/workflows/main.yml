@@ -1,0 +1,55 @@
+name: Build Android APK
+
+# متى يعمل هذا الروبوت؟ عند عمل Push (رفع ملفات جديدة)
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    # نظام التشغيل الذي سيعمل عليه السيرفر
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. جلب الكود الخاص بك
+      - uses: actions/checkout@v3
+
+      # 2. تثبيت بايثون
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # 3. تثبيت المكتبات الضرورية (نفس التي وضعناها في Colab)
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip build-essential git python3 \
+            python3-dev ffmpeg libsdl2-dev libsdl2-image-dev \
+            libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev \
+            libswscale-dev libavformat-dev libavcodec-dev \
+            zlib1g-dev libgstreamer1.0 \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            libltdl-dev libffi-dev libssl-dev zip unzip autoconf libtool \
+            libzbar-dev libzbar0
+
+      # 4. تثبيت Buildozer ومكتبات Kivy
+      - name: Install Buildozer & Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33
+          pip install kivymd reportlab arabic-reshaper python-bidi
+
+      # 5. تنظيف أي بناء سابق (احتياط) وبدء البناء
+      - name: Build APK with Buildozer
+        # yes | ... للموافقة التلقائية على الشروط
+        run: |
+          yes | buildozer android debug
+
+      # 6. رفع ملف APK الناتج لكي تتمكن من تحميله
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: canteen-app-apk
+          path: bin/*.apk
